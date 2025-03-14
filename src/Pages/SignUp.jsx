@@ -12,19 +12,34 @@ import { useNavigate } from 'react-router-dom';
 
 const SignUp = () => {
     const [username, setUsername] = useState('')
+    const [fullName, setFullName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [verifyPassword, setVerifyPassword] = useState('')
     const [passwordError, setPasswordError] = useState(false)
+    const [loading, setLoading] = useState(false)
 
     const navigate = useNavigate()
 
+    const capitalizeWords = (str) => {
+        if (!str) return str
+          return str.toLowerCase().split(' ').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+    }
+
+    const usernameChange = (e) => {
+        const inputValue = e.target.value.trim()
+        setUsername(capitalizeWords(inputValue))
+    }
+
+    
    
     const handleSubmit = (e) =>{
         e.preventDefault()
+        setLoading(true)
+
         if (password === verifyPassword) {
             
-            let allData = {username, email, password, verifyPassword}
+            let allData = {fullName, username, email, password, verifyPassword}
             
             fetch('http://localhost:8000/user',{
                 method: 'POST',
@@ -35,7 +50,7 @@ const SignUp = () => {
                 navigate('/login')
             )).catch((err) => (
                 toast.error('failed:' + err.message)
-            ))
+            )).finally(() => setLoading(false))
         } else {
             setPasswordError(true)
         }
@@ -52,25 +67,29 @@ const SignUp = () => {
                     <form className='flex flex-col gap-5 sm:w-4/5 sm:mx-auto' onSubmit={handleSubmit}>
                         <div className='bg-secondary p-4 rounded relative flex items-center gap-2'>
                             <FaUser className='size-4' />
-                            <input type="text" required placeholder=' Username' onChange={(e) => setUsername(e.target.value)} value={username} className='outline-0' />
+                            <input type="text" required placeholder=' Username' onChange={(e) => setFullName(capitalizeWords(e.target.value))} value={fullName} className='outline-0' />
+                        </div>
+                        <div className='bg-secondary p-4 rounded relative flex items-center gap-2'>
+                            <FaUser className='size-4' />
+                            <input type="text" required placeholder=' Username' onChange={usernameChange} value={username} className='outline-0' />
                         </div>
                         <div className='bg-secondary p-4 rounded relative flex items-center gap-2'>
                             <MdEmail className='size-4' />
-                            <input type="email" required placeholder='Email' onChange={(e) => setEmail(e.target.value)} value={email} className='outline-0' /> 
+                            <input type="email" required placeholder='Email' onChange={(e) => setEmail(e.target.value.trim())} value={email} className='outline-0' /> 
                         </div>
                         <div className='bg-secondary p-4 rounded relative flex items-center gap-2'>
                             <FaLock className='size-4' />
-                            <input type="password" required placeholder='Password' onChange={(e) => setPassword(e.target.value)} value={password} className='outline-0' />
+                            <input type="password" required placeholder='Password' onChange={(e) => setPassword(e.target.value.trim())} value={password} className='outline-0' />
                             <FaEyeSlash className='size-4 ml-auto ' />
                         </div>
                         <div className='bg-secondary p-4 rounded relative flex items-center gap-2'>
                             <FaLock className='size-4 ' />
-                            <input type="password" required placeholder='Confirm Password' onChange={(e) => setVerifyPassword(e.target.value)} value={verifyPassword} className='outline-0' />
+                            <input type="password" required placeholder='Confirm Password' onChange={(e) => setVerifyPassword(e.target.value.trim())} value={verifyPassword} className='outline-0' />
                             <FaEyeSlash className='size-4 ml-auto' />
                         </div>
                             <p className={passwordError ? `text-red-500` : `hidden`}>passwords does not match</p>
                         
-                        <button className='bg-primary p-4 rounded text-white cursor-pointer' type='submit'>Create Account</button>
+                        <button className='bg-primary p-4 rounded text-white cursor-pointer' type='submit' disabled={loading}>{loading ? 'Creating account' : 'Create Account'}</button>
                     </form>
                 </div>
             </div>

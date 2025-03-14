@@ -5,14 +5,18 @@ import { FaLock } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 import MarketStall from '../assets/MarketStall.png'
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
 
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../AuthContext';
 
 const Login = () => {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
+
     const navigate = useNavigate()
+    // Access the login function from the useAuth hook
+    const { login } = useAuth() 
     
     const applyLogin = (e) => {
         e.preventDefault()
@@ -33,6 +37,7 @@ const Login = () => {
                 const user = response[0]
                 if (user.password === password) {
                     toast.success('Login Successfully')
+                    login(user)
                     navigate('/dashboard')
                 } else {
                     toast.error('Enter valid password')
