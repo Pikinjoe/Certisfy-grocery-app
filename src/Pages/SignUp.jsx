@@ -12,7 +12,6 @@ import { useNavigate } from 'react-router-dom';
 
 const SignUp = () => {
     const [username, setUsername] = useState('')
-    const [fullName, setFullName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [verifyPassword, setVerifyPassword] = useState('')
@@ -39,7 +38,7 @@ const SignUp = () => {
 
         if (password === verifyPassword) {
             
-            let allData = {fullName, username, email, password, verifyPassword}
+            let allData = { username, email, password, verifyPassword}
             
             fetch('http://localhost:8000/user',{
                 method: 'POST',
@@ -65,10 +64,7 @@ const SignUp = () => {
                 </div>
                 <div className='sm:w-1/2'>
                     <form className='flex flex-col gap-5 sm:w-4/5 sm:mx-auto' onSubmit={handleSubmit}>
-                        <div className='bg-secondary p-4 rounded relative flex items-center gap-2'>
-                            <FaUser className='size-4' />
-                            <input type="text" required placeholder=' Username' onChange={(e) => setFullName(capitalizeWords(e.target.value))} value={fullName} className='outline-0' />
-                        </div>
+                       
                         <div className='bg-secondary p-4 rounded relative flex items-center gap-2'>
                             <FaUser className='size-4' />
                             <input type="text" required placeholder=' Username' onChange={usernameChange} value={username} className='outline-0' />

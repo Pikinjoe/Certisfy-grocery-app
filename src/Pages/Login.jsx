@@ -49,12 +49,12 @@ const Login = () => {
         
     }
   return (
-    <div className=' bg-green-50 h-screen py-4 overflow-hidden'>
-        <div className='w-4/5 mx-auto h-screen flex flex-col gap-3 sm:gap-7 sm:flex-row sm:items-center sm:w-11/12'>
+    <div className=' bg-green-50 h-screen py-4 overflow-hidden pt-0'>
+        <div className='mx-auto h-screen flex flex-col gap-3 sm:gap-7 sm:flex-row sm:items-center sm:w-11/12'>
             <div className='h-[60%] w-full sm:w-1/2 mb-4 sm:h-4/5'> 
                 <img src={MarketStall} alt="A happy shopper" className='h-full w-full object-cover object-center rounded-b-[50%] sm:rounded-b-none ' />
             </div>
-            <div className='sm:w-1/2'>
+            <div className='w-4/5 mx-auto  sm:w-1/2'>
                 <form className='flex flex-col gap-5 lg:w-4/5 sm:mx-auto' onSubmit={applyLogin}>
                     <div className='bg-secondary p-4 rounded relative flex items-center gap-2'>
                         <MdEmail className='size-4' />

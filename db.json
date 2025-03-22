@@ -51,7 +51,321 @@
       "verifyPassword": "corner"
     }
   ],
-  "orders": [],
+  "orders": [
+    {
+      "id": "8353",
+      "userId": "bf73",
+      "items": [
+        {
+          "productId": 1,
+          "quantity": 1,
+          "price": 12.95
+        },
+        {
+          "productId": 2,
+          "quantity": 1,
+          "price": 8.75
+        },
+        {
+          "productId": 4,
+          "quantity": 1,
+          "price": 7.25
+        }
+      ],
+      "subtotal": 28.95,
+      "shipping": 0,
+      "tax": 2.895,
+      "total": 31.845,
+      "deliverydate": "2025-03-26T03:17:41.283Z",
+      "orderData": "2025-03-21T03:17:47.469Z",
+      "status": "placed"
+    },
+    {
+      "id": "5b57",
+      "userId": "bf73",
+      "items": [
+        {
+          "productId": 1,
+          "quantity": 1,
+          "price": 12.95
+        },
+        {
+          "productId": 2,
+          "quantity": 1,
+          "price": 8.75
+        },
+        {
+          "productId": 4,
+          "quantity": 1,
+          "price": 7.25
+        }
+      ],
+      "subtotal": 28.95,
+      "shipping": 0,
+      "tax": 2.895,
+      "total": 31.845,
+      "deliverydate": "2025-03-26T03:17:49.517Z",
+      "orderData": "2025-03-21T03:17:52.804Z",
+      "status": "placed"
+    },
+    {
+      "id": "148f",
+      "userId": "bf73",
+      "items": [
+        {
+          "productId": 1,
+          "quantity": 2,
+          "price": 12.95
+        },
+        {
+          "productId": 2,
+          "quantity": 1,
+          "price": 8.75
+        },
+        {
+          "productId": 4,
+          "quantity": 2,
+          "price": 7.25
+        }
+      ],
+      "subtotal": 49.15,
+      "shipping": 9.99,
+      "tax": 4.915,
+      "total": 64.05499999999999,
+      "deliverydate": "2025-03-22T03:18:51.933Z",
+      "orderData": "2025-03-21T03:18:54.363Z",
+      "status": "placed"
+    },
+    {
+      "id": "1322",
+      "userId": "bf73",
+      "items": [
+        {
+          "productId": 1,
+          "quantity": 1,
+          "price": 12.95
+        },
+        {
+          "productId": 2,
+          "quantity": 1,
+          "price": 8.75
+        },
+        {
+          "productId": 4,
+          "quantity": 1,
+          "price": 7.25
+        }
+      ],
+      "subtotal": 28.95,
+      "shipping": 0,
+      "tax": 2.895,
+      "total": 31.845,
+      "deliverydate": "2025-03-26T03:18:55.790Z",
+      "orderData": "2025-03-21T03:19:44.883Z",
+      "status": "placed"
+    },
+    {
+      "id": "8d6b",
+      "userId": "bf73",
+      "items": [
+        {
+          "productId": 1,
+          "quantity": 1,
+          "price": 12.95
+        },
+        {
+          "productId": 2,
+          "quantity": 1,
+          "price": 8.75
+        },
+        {
+          "productId": 4,
+          "quantity": 1,
+          "price": 7.25
+        }
+      ],
+      "subtotal": 28.95,
+      "shipping": 0,
+      "tax": 2.895,
+      "total": 31.845,
+      "deliverydate": "2025-03-26T03:40:47.792Z",
+      "orderDate": "2025-03-21T03:40:55.856Z",
+      "status": "placed"
+    },
+    {
+      "id": "520c",
+      "userId": "bf73",
+      "items": [
+        {
+          "productId": 13,
+          "quantity": 1,
+          "price": 3.45
+        },
+        {
+          "productId": 2,
+          "quantity": 1,
+          "price": 8.75
+        }
+      ],
+      "subtotal": 12.2,
+      "shipping": 4.99,
+      "tax": 1.22,
+      "total": 18.41,
+      "deliverydate": "2025-03-24T03:42:44.167Z",
+      "orderDate": "2025-03-21T03:42:47.934Z",
+      "status": "placed"
+    },
+    {
+      "id": "401b",
+      "userId": "bf73",
+      "items": [
+        {
+          "productId": 3,
+          "quantity": 1,
+          "price": 2.85
+        },
+        {
+          "productId": 4,
+          "quantity": 1,
+          "price": 7.25
+        },
+        {
+          "productId": 7,
+          "quantity": 1,
+          "price": 2.55
+        }
+      ],
+      "subtotal": 12.649999999999999,
+      "shipping": 4.99,
+      "tax": 1.265,
+      "total": 18.905,
+      "deliverydate": "2025-03-24T04:13:25.515Z",
+      "orderDate": "2025-03-21T04:13:34.553Z",
+      "status": "placed"
+    },
+    {
+      "id": "eb41",
+      "userId": "bf73",
+      "items": [
+        {
+          "productId": 6,
+          "quantity": 1,
+          "price": 6.85
+        },
+        {
+          "productId": 9,
+          "quantity": 1,
+          "price": 3.95
+        },
+        {
+          "productId": 13,
+          "quantity": 1,
+          "price": 3.45
+        }
+      ],
+      "subtotal": 14.25,
+      "shipping": 9.99,
+      "tax": 1.425,
+      "total": 25.665,
+      "deliveryDate": "2025-03-22T04:18:35.077Z",
+      "orderDate": "2025-03-21T04:18:40.169Z",
+      "status": "placed"
+    },
+    {
+      "id": "60e0",
+      "userId": "bf73",
+      "items": [
+        {
+          "productId": 1,
+          "quantity": 1,
+          "price": 12.95
+        },
+        {
+          "productId": 6,
+          "quantity": 3,
+          "price": 6.85
+        },
+        {
+          "productId": 21,
+          "quantity": 1,
+          "price": 15.85
+        },
+        {
+          "productId": 75,
+          "quantity": 1,
+          "price": 5.25
+        },
+        {
+          "productId": 2,
+          "quantity": 1,
+          "price": 8.75
+        }
+      ],
+      "subtotal": 63.35,
+      "shipping": 0,
+      "tax": 6.335000000000001,
+      "total": 69.685,
+      "deliveryDate": "2025-03-26T11:27:09.452Z",
+      "orderDate": "2025-03-21T11:27:17.819Z",
+      "status": "placed"
+    },
+    {
+      "id": "c607",
+      "userId": "bf73",
+      "items": [
+        {
+          "productId": 1,
+          "quantity": 1,
+          "price": 12.95
+        },
+        {
+          "productId": 18,
+          "quantity": 1,
+          "price": 8.25
+        },
+        {
+          "productId": 24,
+          "quantity": 1,
+          "price": 3.55
+        }
+      ],
+      "subtotal": 24.75,
+      "shipping": 9.99,
+      "tax": 2.475,
+      "total": 37.215,
+      "deliveryDate": "2025-03-22T11:32:18.378Z",
+      "orderDate": "2025-03-21T11:32:21.496Z",
+      "status": "placed"
+    },
+    {
+      "id": "7e79",
+      "userId": "bf73",
+      "items": [
+        {
+          "productId": 1,
+          "quantity": 10,
+          "price": 12.95
+        },
+        {
+          "productId": 4,
+          "quantity": 10,
+          "price": 7.25
+        },
+        {
+          "productId": 85,
+          "quantity": 10,
+          "price": 3.95
+        }
+      ],
+      "subtotal": 241.5,
+      "shipping": 9.99,
+      "tax": 24.150000000000002,
+      "total": 275.64,
+      "deliveryDate": "2025-03-22T18:20:13.905Z",
+      "orderDate": "2025-03-21T18:20:53.407Z",
+      "status": "placed"
+    }
+  ],
   "cart": [],
   "favorites": [
     {
@@ -68,6 +382,31 @@
       "id": "6087",
       "userId": "bf73",
       "productId": 8
+    },
+    {
+      "id": "ee4b",
+      "userId": "bf73",
+      "productId": 23
+    },
+    {
+      "id": "f527",
+      "userId": "bf73",
+      "productId": 14
+    },
+    {
+      "id": "a747",
+      "userId": "bf73",
+      "productId": 35
+    },
+    {
+      "id": "3ccd",
+      "userId": "bf73",
+      "productId": 1
+    },
+    {
+      "id": "8aa0",
+      "userId": "bf73",
+      "productId": 102
     }
   ]
 }

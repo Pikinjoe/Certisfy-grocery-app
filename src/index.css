@@ -20,7 +20,7 @@
 
 @layer base {
   body {
-    @apply font-satoshi
+    @apply font-satoshi box-border
   }
 }
 
