@@ -5,6 +5,7 @@ import {
   Route,
   useLocation,
   useNavigate,
+  Navigate,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { ToastContainer } from "react-toastify";
@@ -19,9 +20,13 @@ import Footer from "./Footer";
 import Categories from "./Pages/Categories";
 import Favorites from "./Pages/Favorites";
 import Profile from "./Pages/Profile";
+import Review from "./Pages/Review";
 
 function MainContent() {
   const [logoutHandle, setLogoutHandle] = useState(false);
+  const { logout, user, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const cancelLogout = () => {
     setLogoutHandle(false);
@@ -31,19 +36,32 @@ function MainContent() {
     setLogoutHandle(false);
     navigate("/login");
   };
-  const { logout } = useAuth();
-  const navigate = useNavigate();
 
-  const location = useLocation();
   const pathsWithoutNavlink = [
     "/",
     "/signup",
     "/login",
     "/cart",
     "/product/:id",
-     "/profile"
+    "/profile",
+    "/review",
   ];
-  const pathsWithoutFooter = ["/", "/signup", "/login", "/cart", "/profile"];
+  const pathsWithoutFooter = [
+    "/",
+    "/signup",
+    "/login",
+    "/cart",
+    "/profile",
+    "/review",
+  ];
+
+  if (loading) {
+    return (
+      <div className="text-center min-h-screen flex justify-center items-center">
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen overflow-y-scroll relative">
@@ -92,10 +110,16 @@ function MainContent() {
           path="/categories"
           element={<ProtectedRoute component={Categories} />}
         />
-         <Route
+        <Route
           path="/profile"
-          element={<ProtectedRoute component={Profile} setLogoutHandle={setLogoutHandle} />}
+          element={
+            <ProtectedRoute
+              component={Profile}
+              setLogoutHandle={setLogoutHandle}
+            />
+          }
         />
+        <Route path="/review" element={<Review />} />
       </Routes>
       {pathsWithoutFooter.includes(location.pathname) ? null : (
         <Footer setLogoutHandle={setLogoutHandle} />
@@ -115,16 +139,13 @@ function App() {
 }
 
 // ProtectedRoute component to protect authenticated routes
-const ProtectedRoute = ({ component: Component }) => {
-  const { user, loading } = useAuth();
-  if (loading)
-    return (
-      <div className="text-center min-h-screen flex justify-center items-center">
-        Loading...
-      </div>
-    );
-
-  return user ? <Component /> : <Navigate to="/Login" />;
+const ProtectedRoute = ({ component: Component, setLogoutHandle, ...rest }) => {
+  const { user } = useAuth();
+  return user ? (
+    <Component setLogoutHandle={setLogoutHandle} {...rest} />
+  ) : (
+    <Navigate to="/Login" />
+  );
 };
 
 export default App;

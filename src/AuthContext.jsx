@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { toast } from 'react-toastify'
 
 const AuthContext = createContext()
 
@@ -28,8 +29,31 @@ export const AuthProvider = ({children}) => {
     localStorage.removeItem('user')
   }
 
+  const updateUser = async (updatedUser) => {
+    try {
+    setUser(updatedUser)
+    localStorage.setItem('user', JSON.stringify(updatedUser))
+    const response = await fetch(`http://localhost:8000/user/${user.id}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(updatedUser),
+    })
+    if (!response.ok) {
+      throw new Error('Failed to update user on server')
+    }
+
+    const serverUser = await response.json()
+    setUser(serverUser)
+    localStorage.setItem('user', JSON.stringify(serverUser))
+    toast.success('Profile updated successfully!')
+  } catch (error) {
+    toast.error('Failed to update profile')
+    console.error('Error updating user:', error)
+  }
+}
+
   return (
-    <AuthContext.Provider value={{user, login, logout, loading}}>
+    <AuthContext.Provider value={{user, login, logout, loading, updateUser}}>
       {children}
     </AuthContext.Provider>
   )

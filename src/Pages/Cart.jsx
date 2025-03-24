@@ -11,18 +11,19 @@ const Cart = () => {
 
   const [quantities, setQuantities] = useState({});
   const [carts, setCarts] = useState([]);
-  const [selectedDelivery, setSelectedDelivery] = useState(null)
-  const [isOrdering, setIsOrdering] = useState(false)
+  const [selectedDelivery, setSelectedDelivery] = useState(null);
+  const [isOrdering, setIsOrdering] = useState(false);
+  const [review, setReview] = useState(false);
 
   const { user } = useAuth();
 
-  const currentDate = new Date()
+  const currentDate = new Date();
 
   const deliveryOptions = [
-    {days: 5, cost: 0.00, label: 'Standard (5 days)'},
-    {days: 3, cost: 4.99, label: 'Standard (3 days)'},
-    {days: 1, cost: 9.99, label: 'Standard (1 days)'},
-  ]
+    { days: 5, cost: 0.0, label: "Standard (5 days)" },
+    { days: 3, cost: 4.99, label: "Standard (3 days)" },
+    { days: 1, cost: 9.99, label: "Standard (1 days)" },
+  ];
 
   useEffect(() => {
     if (user) {
@@ -38,12 +39,12 @@ const Cart = () => {
         .then((data) => {
           setCarts(data);
 
-          const initialQuantities = {}
+          const initialQuantities = {};
           data.forEach((item) => {
-            initialQuantities[item.productId] = 1
-          })
-          setQuantities(initialQuantities)
-          setSelectedDelivery(deliveryOptions[0])
+            initialQuantities[item.productId] = 1;
+          });
+          setQuantities(initialQuantities);
+          setSelectedDelivery(deliveryOptions[0]);
         })
         .catch((error) => {
           console.error("Error fetching cart:", error);
@@ -112,7 +113,7 @@ const Cart = () => {
       total: getSubTotal() + (getSubTotal() * 0.1) + selectedDelivery.cost,
       deliveryDate: new Date(currentDate.getTime() + selectedDelivery.days * 24 * 60 * 60 * 1000).toISOString(),
       orderDate: new Date().toISOString(),
-      status: 'placed'
+      status: 'placed',
     }
 
     try {
@@ -197,8 +198,8 @@ const Cart = () => {
                 </div>
                 <div className="self-end flex flex-col gap-2">
                   <p className="font-semibold text-primary">{`$${(
-                    product.price * (quantities[product.id] || 1)).toFixed(2)
-                  }`}</p>
+                    product.price * (quantities[product.id] || 1)
+                  ).toFixed(2)}`}</p>
                   <div className="bg-primary w-20  mb-2 mr-2 rounded flex justify-between items-center px-1 text-white">
                     <span
                       className="bg-secondary-text text-primary font-bold text-lg w-4 h-4 flex justify-center items-center rounded cursor-pointer"
@@ -206,7 +207,7 @@ const Cart = () => {
                     >
                       -
                     </span>
-                    <span>{quantities[product.id] || 1 }</span>
+                    <span>{quantities[product.id] || 1}</span>
                     <span
                       className="bg-secondary-text text-primary font-bold text-lg w-4 h-4 flex justify-center items-center rounded cursor-pointer"
                       onClick={() => addItem(product.id)}
@@ -222,19 +223,34 @@ const Cart = () => {
             <div>
               <p className="capitalize font-bold text-xl ml-4">delivery time</p>
               <div className="grid grid-cols-1 sm:w-96 gap-4 py-4">
-                {deliveryOptions.map(option => {
-                  const deliveryDate = new Date(currentDate.getTime() + option.days * 24 * 60 * 60 * 1000 )
+                {deliveryOptions.map((option) => {
+                  const deliveryDate = new Date(
+                    currentDate.getTime() + option.days * 24 * 60 * 60 * 1000
+                  );
                   return (
-                    <div className="flex justify-between items-center mx-4 px-4 bg-secondary-text rounded-2xl shadow-2xl inset-shadow-sm py-2" key={option.days}>
-                  <input type="radio"checked={selectedDelivery?.days === option.days} onChange={() => setSelectedDelivery(option)} className="size-6" />
-                  <div>
-                    <p className="text-primary capitalize">
-                      <span>{option.label},</span> {deliveryDate.toLocaleDateString()}
-                    </p>
-                    <p className="capitalize font-semibold">{option.cost === 0 ? 'Free - shipping' : `$${option.cost.toFixed(2)} - shipping`}</p>
-                  </div>
-                </div>
-                  ) 
+                    <div
+                      className="flex justify-between items-center mx-4 px-4 bg-secondary-text rounded-2xl shadow-2xl inset-shadow-sm py-2"
+                      key={option.days}
+                    >
+                      <input
+                        type="radio"
+                        checked={selectedDelivery?.days === option.days}
+                        onChange={() => setSelectedDelivery(option)}
+                        className="size-6"
+                      />
+                      <div>
+                        <p className="text-primary capitalize">
+                          <span>{option.label},</span>{" "}
+                          {deliveryDate.toLocaleDateString()}
+                        </p>
+                        <p className="capitalize font-semibold">
+                          {option.cost === 0
+                            ? "Free - shipping"
+                            : `$${option.cost.toFixed(2)} - shipping`}
+                        </p>
+                      </div>
+                    </div>
+                  );
                 })}
               </div>
             </div>
@@ -245,8 +261,7 @@ const Cart = () => {
               </p>
               <div className="grid grid-cols-1 sm:w-96 gap-4 py-4">
                 <div className="flex justify-between items-center mx-4 px-4 bg-secondary-text rounded-2xl shadow-2xl inset-shadow-sm py-2">
-                  <input type="radio" name="delivery-mode"
-                  className="size-6" />
+                  <input type="radio" name="delivery-mode" className="size-6" />
                   <p className="capitalize font-semibold">pay on delivery</p>
                 </div>
 
@@ -283,7 +298,13 @@ const Cart = () => {
                 <p className="text-primary">${total.toFixed(2)}</p>
               </div>
 
-              <button className="bg-primary w-full text-white p-4 rounded-md mb-2 hover:opacity-80 text-lg font-semibold cursor-pointer" onClick={placeOrder} disabled={isOrdering}>{isOrdering ? 'Order Placed' : 'Place Your Order'}</button>
+              <button
+                className="bg-primary w-full text-white p-4 rounded-md mb-2 hover:opacity-80 text-lg font-semibold cursor-pointer"
+                onClick={placeOrder}
+                disabled={isOrdering}
+              >
+                {isOrdering ? "Processing Order" : "Place Your Order"}
+              </button>
             </div>
           </div>
         </>
@@ -292,6 +313,51 @@ const Cart = () => {
           <p className="text-2xl md:text-5xl text-primary-text">
             No Orders Yet
           </p>
+        </div>
+      )}
+
+      {review && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-primary-text">
+              </h2>
+              <button
+                type="button"
+                className="text-gray-600 hover:text-gray-800 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <img
+              className="w-full h-64 object-cover rounded-lg"
+            />
+            <div className=" mt-2 flex justify-between items-center">
+              <p className="text-red-600">{}</p>
+              <p
+                className="flex items-center justify-between gap-2 bg-primary
+                                           py-0.5 px-2 rounded-md text-white"
+              >
+                <span
+                  
+                >
+                </span>
+              </p>
+            </div>
+            <p className="text-gray-600 mt-2 font-semibold">
+              Category:{" "}
+              <span className="capitalize"></span>
+            </p>
+            <p className="text-gray-600 test-sm mt-2">
+            </p>
+            <button
+              className="mt-4 w-full bg-primary text-white py-2 rounded-lg cursor-pointer"
+              type="button"
+              
+            >
+              Add to Cart
+            </button>
+          </div>
         </div>
       )}
     </div>
