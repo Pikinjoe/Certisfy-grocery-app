@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { EffectCoverflow } from "swiper/modules";
@@ -7,11 +7,10 @@ import "swiper/css/effect-coverflow";
 import "./Dashboard.css";
 
 import { useAuth } from "./AuthContext";
-
+import { getProducts } from "./services/api";
 import { IoSearchOutline } from "react-icons/io5";
 import { FaStar } from "react-icons/fa";
 import { assets } from "./Data/assets";
-import products from "./Data/products";
 import discounts from "./Data/discounts";
 import { toast } from "react-toastify";
 
@@ -19,19 +18,43 @@ const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  if (!user) return navigate("/login");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [cartItems, setCartItems] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   //function to get random products for featured products section
+
+  //Fetch products from backend on mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await getProducts();
+        setProducts(res.data);
+        setLoading(false);
+      } catch (err) {
+        setError("Failed to load products");
+        setLoading(false);
+        toast.error("Failed to load products");
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  if (!user) return navigate("/login");
+
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) return products; // Show all products if no search query
+    return products.filter(
+      (product) =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [products, searchQuery]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(
-        `/categories?search=${encodeURIComponent(searchQuery.toLowerCase())}`
-      );
-    }
   };
 
   const getRandomProduct = (arr, num) => {
@@ -63,6 +86,8 @@ const Dashboard = () => {
     });
   };
 
+  const randomCategoryProducts = useMemo(() => getRandomFromEachCategory(products), [products])
+
   const addToCart = async (productId) => {
     if (!user) {
       toast.error("Please log in to add to cart");
@@ -76,7 +101,7 @@ const Dashboard = () => {
 
     try {
       const checkResponse = await fetch(
-        `http://localhost:8000/cart?userId=${user.id}&productId=${productId}`,
+        `http://localhost:8000/api/carts?userId=${user.id}&productId=${productId}`,
         {
           headers: { "Content-Type": "application/json" },
         }
@@ -89,7 +114,7 @@ const Dashboard = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:8000/cart", {
+      const response = await fetch("http://localhost:8000/api/carts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -108,10 +133,6 @@ const Dashboard = () => {
     }
   };
   //Memoize the function to avoid re-randomizing the products on every render
-  const randomCategoryProducts = useMemo(
-    () => getRandomFromEachCategory(products),
-    []
-  );
 
   const openProductDetails = (product) => {
     setSelectedProduct(product);
@@ -120,6 +141,22 @@ const Dashboard = () => {
   const closeProductDetails = () => {
     setSelectedProduct(null);
   };
+
+  if (loading) {
+    return (
+      <div className="bg-green-50 min-h-screen flex items-center justify-center">
+        Loading products...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-green-50 min-h-screen flex items-center justify-center">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-green-50 min-h-screen">
@@ -131,7 +168,7 @@ const Dashboard = () => {
           >
             <input
               type="text"
-              placeholder="Search for groceries"
+              placeholder="Search for groceries or categories"
               className="outline-0 flex-grow cursor-pointer"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -173,28 +210,37 @@ const Dashboard = () => {
 
         <div className="mx-4 sm:mx-8 sm:my-8 my-2">
           <p className="font-semibold capitalize px-4 pb-1">
-            featured products
+            {searchQuery ? "Search Results" : "Featured Products"}
           </p>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 sm:gap-8 p-4">
-            {randomProducts.map((product) => (
-              <div
-                className=" shadow-md"
-                key={product.id}
-                onClick={() => openProductDetails(product)}
-              >
-                <img
-                  src={assets[product.image]}
-                  alt={product.name}
-                  className="w-26 h-14 object-cover rounded cursor-pointer sm:h-72 sm:w-full"
-                />
-                <p className="overflow-hidden text-ellipsis w-24 sm:w-full">
-                  {product.name}
-                </p>
-              </div>
-            ))}
-          </div>
+          {filteredProducts.length === 0 && searchQuery ? (
+            <p className="text-center text-gray-600 p-4">
+              No products found for '{searchQuery}'
+            </p>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 sm:gap-8 p-4">
+              {(searchQuery ? filteredProducts : randomProducts).map(
+                (product) => (
+                  <div
+                    className=" shadow-md"
+                    key={product.id}
+                    onClick={() => openProductDetails(product)}
+                  >
+                    <img
+                      src={assets[product.image]}
+                      alt={product.name}
+                      className="w-26 h-14 object-cover rounded cursor-pointer sm:h-72 sm:w-full"
+                    />
+                    <p className="overflow-hidden text-ellipsis w-24 sm:w-full">
+                      {product.name}
+                    </p>
+                  </div>
+                )
+              )}
+            </div>
+          )}
         </div>
 
+{!searchQuery && (
         <div className="my-2 sm:mb-8 mt-4 mx-4 sm:mx-8">
           <div className="flex justify-between items-center">
             <p className="font-semibold capitalize pb-1 px-4">categories</p>
@@ -207,7 +253,7 @@ const Dashboard = () => {
               <div
                 className="shadow-md"
                 key={product.id}
-                onClick={() => openProductDetails(product)}
+                onClick={() => navigate(`/categories?category=&{encodeURIComponent(product.category)}`)}
               >
                 <img
                   src={assets[product.image]}
@@ -221,34 +267,37 @@ const Dashboard = () => {
             ))}
           </div>
         </div>
+)}
 
-        <div className="mt-1">
-          <p className="capitalize text-sm bg-primary px-4 sm:px-8 py-1 text-white">
-            special deals
-          </p>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 sm:gap-8 p-4">
-            {sortedRandomProducts.map((product) => (
-              <div
-                className="sm:my-4 shadow-md"
-                key={product.id}
-                onClick={() => openProductDetails(product)}
-              >
-                <img
-                  src={assets[product.image]}
-                  alt={product.name}
-                  className="w-28 h-14 object-cover rounded sm:h-72 sm:w-full cursor-pointer"
-                />
+        {!searchQuery && (
+          <div className="mt-1">
+            <p className="capitalize text-sm bg-primary px-4 sm:px-8 py-1 text-white">
+              special deals
+            </p>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 sm:gap-8 p-4">
+              {sortedRandomProducts.map((product) => (
+                <div
+                  className="sm:my-4 shadow-md"
+                  key={product.id}
+                  onClick={() => openProductDetails(product)}
+                >
+                  <img
+                    src={assets[product.image]}
+                    alt={product.name}
+                    className="w-28 h-14 object-cover rounded sm:h-72 sm:w-full cursor-pointer"
+                  />
 
-                <div className="flex sm:justify-between sm:items-center sm:flex-row flex-col">
-                  <p className="capitalize overflow-hidden text-ellipsis w-24 sm:w-full">
-                    {product.name}
-                  </p>
-                  <p className="font-bold text-primary">{`$${product.price}`}</p>
+                  <div className="flex sm:justify-between sm:items-center sm:flex-row flex-col">
+                    <p className="capitalize overflow-hidden text-ellipsis w-24 sm:w-full">
+                      {product.name}
+                    </p>
+                    <p className="font-bold text-primary">{`$${product.price}`}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Modal for Product Details */}

@@ -28,9 +28,7 @@ function MainContent() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const cancelLogout = () => {
-    setLogoutHandle(false);
-  };
+  const cancelLogout = () => setLogoutHandle(false);
   const logOut = () => {
     logout();
     setLogoutHandle(false);
@@ -67,12 +65,12 @@ function MainContent() {
     <div className="h-screen overflow-y-scroll relative">
       {pathsWithoutNavlink.includes(location.pathname) ? null : <Navlink />}
       {logoutHandle && (
-        <div className=" bg-primary-text w-10/12 sm:w-[500px] h-52 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 absolute z-50 rounded-md">
+        <div className="bg-primary-text w-10/12 sm:w-[500px] h-52 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 absolute z-50 rounded-md">
           <div className="text-white ml-4 pt-6">
             <h2 className="font-bold pb-2 text-lg">Log out</h2>
             <p>Are you sure you want to log out?</p>
           </div>
-          <div className="pt-16 flex justify-end gap-4 mr-4 text-primary-text ">
+          <div className="pt-16 flex justify-end gap-4 mr-4 text-primary-text">
             <button
               className="bg-white py-2 px-5 rounded-lg font-semibold hover:opacity-80 cursor-pointer"
               onClick={cancelLogout}
@@ -127,6 +125,7 @@ function MainContent() {
     </div>
   );
 }
+
 function App() {
   return (
     <AuthProvider>
@@ -144,7 +143,7 @@ const ProtectedRoute = ({ component: Component, setLogoutHandle, ...rest }) => {
   return user ? (
     <Component setLogoutHandle={setLogoutHandle} {...rest} />
   ) : (
-    <Navigate to="/Login" />
+    <Navigate to="/login" />
   );
 };
 

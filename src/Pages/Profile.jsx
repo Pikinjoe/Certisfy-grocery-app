@@ -24,7 +24,7 @@ import ChangeEmail from "../components/ChangeEmail";
 
 const Profile = ({ setLogoutHandle }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [activeComponent, setActiveComponent] = useState(null);
 
   if (!user) {
@@ -33,12 +33,32 @@ const Profile = ({ setLogoutHandle }) => {
 
   const getInitials = (fullName) => {
     return fullName
-      .split("")
+      .split(" ")
       .map((name) => name.charAt(0))
       .join("")
       .toUpperCase();
   };
   const initials = getInitials(user.fullName);
+
+  const deleteAccount = async () => {
+    const confirmed = window.confirm('Are you sure that you want to delete your account and all associated data? This action can not be undone.')
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`http://localhost:8000/user/${user.id}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        throw new Error("Failed to delete account");
+      }
+      logout()
+      toast.success('Account deleted successfully')
+      navigate('/')
+    } catch (error){
+      console.error('Error deleting account:', error)
+      toast.error('Failed to delete account')
+    }
+  }
 
   const menuItems = [
     {
@@ -78,7 +98,7 @@ const Profile = ({ setLogoutHandle }) => {
     {
       icon: FaUserTimes,
       text: "delete my account and data",
-      action: () => console.log("Delete account clicked"),
+      action: deleteAccount,
     },
     {
       icon: IoLogOut,
@@ -103,11 +123,24 @@ const Profile = ({ setLogoutHandle }) => {
           onClick={() => navigate("/categories")}
         />
         <div className="text-center flex justify-center items-center flex-col h-full pb-2">
+          {user.photoUrl ? (
           <img
             src={user.photoUrl}
             className="h-16 w-16 bg-primary-text rounded-full object-cover"
             alt={initials}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'block'
+            }}
           />
+          ) : null}
+          <div
+            className="h-16 w-16 bg-primary-text rounded-full flex items-center justify-center text-white text-3xl"
+            style={{ display: user.photoUrl ? "none" : "block" }}
+          >
+            {initials}
+          </div>
+
           <h3 className="capitalize text-xl">{user.fullName}</h3>
           <p>{user.email}</p>
         </div>

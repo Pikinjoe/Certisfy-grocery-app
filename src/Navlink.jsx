@@ -12,7 +12,7 @@ const Navlink = () => {
 
   useEffect(() => {
     if (user) {
-      fetch(`http://localhost:8000/cart?userId=${user.id}`).then((res) => res.json()).then((data) => {
+      fetch(`http://localhost:8000/api/carts?userId=${user.id}`).then((res) => res.json()).then((data) => {
         setCartCount(data.length)
       }).catch((error) => {
         console.error('Error fetching cart:', error)

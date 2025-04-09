@@ -1,34 +1,50 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../AuthContext";
+import { getFavorites, getProducts } from "../services/api";
+import { toast } from "react-toastify";
 
 import { assets } from "../Data/assets";
-import products from "../Data/products";
 
 const Favorites = () => {
   const { user } = useAuth();
   const [favorites, setFavorites] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetch(`http://localhost:8000/favorites?userId=${user.id}`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to fetch favorites");
-          return res.json();
-        })
-        .then((data) => {
-          setFavorites(data);
-        })
-        .catch((error) => {
-          console.error("Error fetching favorites:", error);
-          setFavorites([]);
-        });
-    } else {
+    const fetchProducts = async () => {
+      try {
+        const res = await getProducts();
+        setProducts(res.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error loading products:", err);
+        setLoading(false);
+        toast.error("Failed to load products");
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
       setFavorites([]);
+      return;
     }
+
+    const fetchFavorites = async () => {
+      try {
+        const res = await getFavorites(user.id);
+        const data = Array.isArray(res.data) ? res.data : [];
+        setFavorites(data);
+      } catch (error) {
+        console.error("Error fetching favorites:", error);
+        toast.error("Failed to fetch favorite");
+        setFavorites([]);
+      }
+    };
+    fetchFavorites();
   }, [user]);
 
   const favoriteProducts = favorites
@@ -36,6 +52,11 @@ const Favorites = () => {
       products.find((product) => product.id === favorite.productId)
     )
     .filter(Boolean);
+
+    if (loading) {
+      return <div className="bg-green-50 min-h-screen flex items-center justify-center">Loading...</div>;
+
+    }
 
   return (
     <div className="bg-green-50 min-h-screen">

@@ -1,21 +1,24 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../AuthContext";
 
 import { assets } from "../Data/assets";
-import products from "../Data/products";
+import { getCarts, getProducts, api, createReview } from "../services/api";
 import { toast } from "react-toastify";
 
 const Cart = () => {
   const navigate = useNavigate();
-
-  const [quantities, setQuantities] = useState({});
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  //const [quantities, setQuantities] = useState({});
   const [carts, setCarts] = useState([]);
+  const [products, setProducts] = useState([]);
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [isOrdering, setIsOrdering] = useState(false);
-  const [review, setReview] = useState(false);
-
-  const { user } = useAuth();
+  const [showRating, setShowRating] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const shouldShowModalRef = useRef(false);
 
   const currentDate = new Date();
 
@@ -26,136 +29,186 @@ const Cart = () => {
   ];
 
   useEffect(() => {
-    if (user) {
-      fetch(`http://localhost:8000/cart?userId=${user.id}`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error(`Failed to fetch cart: ${res.status}`);
-          return res.json();
-        })
-        .then((data) => {
-          setCarts(data);
+    const fetchProducts = async () => {
+      try {
+        const res = await getProducts();
+        setProducts(res.data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        toast.error("Failed to load products");
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
-          const initialQuantities = {};
-          data.forEach((item) => {
-            initialQuantities[item.productId] = 1;
-          });
-          setQuantities(initialQuantities);
-          setSelectedDelivery(deliveryOptions[0]);
-        })
-        .catch((error) => {
-          console.error("Error fetching cart:", error);
-          toast.error("Failed to load cart items.");
-        });
-    } else {
+  useEffect(() => {
+    if (showRating) shouldShowModalRef.current = true;
+  }, [showRating]);
+
+  useEffect(() => {
+    if (!user) {
       setCarts([]);
+      return;
     }
+    const fetchCart = async () => {
+      try {
+        const res = await getCarts(user.id);
+        const data = Array.isArray(res.data) ? res.data : [];
+        setCarts(data);
+        if (!selectedDelivery) setSelectedDelivery(deliveryOptions[0]);
+      } catch (error) {
+        console.error("Error fetching cart:", error);
+        toast.error("Failed to load cart items.");
+      }
+    };
+    fetchCart();
   }, [user]);
 
-  const cartProducts = carts.map((cart) => ({
-    ...products.find((product) => product.id === cart.productId),
-    cartId: cart.id
-  })
-  );
-
-  const addItem = (productId) => {
-    setQuantities((prev) => ({
-      ...prev, [productId]: (prev[productId] || 0) + 1
+  const cartProducts = carts
+    .map((cart) => ({
+      ...products.find(
+        (product) => String(product.id) === String(cart.productId)
+      ),
+      cartId: cart.id,
+      quantity: cart.quantity || 1,
     }))
-  }
+    .filter(Boolean);
 
-  const removeItem = (productId, cartId) => {
-    setQuantities((prev) => {
-      const newQty = (prev[productId] || 1) -1
-      if (newQty <= 0) {
-        fetch(`http://localhost:8000/cart/${cartId}`, {
-          method: 'DELETE',
-        })
-        .then(() => {
-          setCarts((preCarts) => preCarts.filter((cart) => cart.id !== cartId))
-        })
-        .catch((error) => {
-          console.error('Error removing item:', error)
-          toast.error('Failed to remove item')
-        })
-        return { ...prev, [productId]: 0 }
+  const addItem = async (productId, cartId) => {
+    const cart = carts.find((c) => c.id === cartId);
+    const newQuantity = (cart.quantity || 1) + 1;
+    try {
+      await api.patch(`/carts/${cartId}`, { quantity: newQuantity });
+      setCarts((prev) =>
+        prev.map((cart) =>
+          cart.id === cartId ? { ...cart, quantity: newQuantity } : cart
+        )
+      );
+      toast.success("Added one more to cart");
+    } catch (error) {
+      console.error("Error adding item:", error);
+      toast.error("Failed to add item");
+    }
+  };
+
+  const removeItem = async (productId, cartId) => {
+    const cart = carts.find((c) => c.id === cartId);
+    const currentQty = cart.quantity || 1;
+    const newQuantity = currentQty - 1;
+
+    try {
+      if (newQuantity <= 0) {
+        await api.delete(`/carts/${cartId}`);
+        setCarts((prevCarts) => prevCarts.filter((cart) => cart.id !== cartId));
+        toast.success("Item removed from cart");
+      } else {
+        await api.patch(`/carts/${cartId}`, { quantity: newQuantity });
+        setCarts((prev) =>
+          prev.map((cart) =>
+            cart.id === cartId ? { ...cart, quantity: newQuantity } : cart
+          )
+        );
+        toast.success("Removed one from cart");
       }
-      return { ...prev, [productId]: newQty }
-    })
-  }
+    } catch (error) {
+      console.error("Error removing item:", error);
+      toast.error("Failed to remove item");
+    }
+  };
 
   const getSubTotal = () => {
     return cartProducts.reduce(
-      (sum, product) => sum + product.price * (quantities[product.id] || 1 ),
+      (sum, product) => sum + product.price * product.quantity,
       0
-    )
-  }
+    );
+  };
 
   const placeOrder = async () => {
     if (!selectedDelivery) {
-      toast.error('Please select a delivery option')
-      return
+      toast.error("Please select a delivery option");
+      return;
     }
-    setIsOrdering(true)
+    setIsOrdering(true);
     const orderData = {
       userId: user.id,
       items: cartProducts.map((product) => ({
         productId: product.id,
-        quantity: quantities[product.id] || 1,
-        price: product.price
+        quantity: product.quantity,
+        price: product.price,
       })),
       subtotal: getSubTotal(),
       shipping: selectedDelivery.cost,
       tax: getSubTotal() * 0.1,
-      total: getSubTotal() + (getSubTotal() * 0.1) + selectedDelivery.cost,
-      deliveryDate: new Date(currentDate.getTime() + selectedDelivery.days * 24 * 60 * 60 * 1000).toISOString(),
+      total: getSubTotal() + getSubTotal() * 0.1 + selectedDelivery.cost,
+      deliveryDate: new Date(
+        currentDate.getTime() + selectedDelivery.days * 24 * 60 * 60 * 1000
+      ).toISOString(),
       orderDate: new Date().toISOString(),
-      status: 'placed',
-    }
+      status: "placed",
+    };
 
     try {
-    const orderResponse = await fetch('http://localhost:8000/orders', {
-      method: 'POST',
-      headers: {'Content-Type' : 'application/json'},
-      body: JSON.stringify(orderData)
-    })
-    if (!orderResponse.ok) { throw new Error(`Failed to place order: ${orderResponse.status}`);
-  }
-  
-    const deletePromises = carts.map((cart) => fetch(`http://localhost:8000/cart/${cart.id}`, {
-          method: 'DELETE',
-        })
-      .then((res) => {
-        if (!res.ok) throw new Error(`Failed to delete cart item ${cart.id}`);
-        return res
-      })
-    );
+      await api.post("/orders", orderData);
+      await api.delete("/carts/user", { data: { userId: user.id } });
 
-    await Promise.all(deletePromises);
-
-    toast.success('Order placed successfully')
-        setTimeout(() => {
-          setCarts([])
-          setQuantities({})
-          setIsOrdering(false)
-          navigate('/history')
-        }, 1000)
-      } catch(error) {
-      console.error('Error placing order:', error)
-      toast.error('Failed to placed order')
-      setIsOrdering(false)
+      toast.success("Order placed successfully");
+      setCarts([]);
+      setShowRating(true);
+    } catch (error) {
+      console.error("Error placing order:", error);
+      toast.error("Failed to placed order");
+      setIsOrdering(false);
     }
+  };
+
+  const handleRating = () => {
+    if (rating === 0) {
+      toast.error("Please select a rating before submitting.");
+      return;
+    }
+    const reviewData = {
+      userId: user.id,
+      rating,
+      comment,
+    };
+    try {
+      createReview(reviewData);
+      toast.success("Thank you for your feedback!");
+      setShowRating(false);
+      setRating(0); // Reset for next time
+      setComment("");
+      setIsOrdering(false);
+      navigate("/history");
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      toast.error("Failed to submit rating");
+      setShowRating(false);
+      setIsOrdering(false);
+      navigate("/history");
+    }
+  };
+
+  const skipRating = () => {
+    setShowRating(false);
+    setIsOrdering(false);
+    navigate("/history");
+  };
+
+  const shipping = selectedDelivery?.cost || 0;
+  const taxRate = 0.1;
+  const subtotal = getSubTotal();
+  const tax = subtotal * taxRate;
+  const total = subtotal + tax + shipping;
+
+  if (loading) {
+    return (
+      <div className="bg-green-50 min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
-
-  const shipping = selectedDelivery?.cost || 0
-  const taxRate = 0.1
-  const subtotal = getSubTotal()
-  const tax = subtotal * taxRate
-  const total = subtotal + tax + shipping
-
   return (
     <div className="bg-green-50 min-h-screen">
       <h2 className="text-center font-bold text-xl py-4 text-primary-text md:text-2xl">
@@ -198,7 +251,7 @@ const Cart = () => {
                 </div>
                 <div className="self-end flex flex-col gap-2">
                   <p className="font-semibold text-primary">{`$${(
-                    product.price * (quantities[product.id] || 1)
+                    product.price * product.quantity
                   ).toFixed(2)}`}</p>
                   <div className="bg-primary w-20  mb-2 mr-2 rounded flex justify-between items-center px-1 text-white">
                     <span
@@ -207,10 +260,10 @@ const Cart = () => {
                     >
                       -
                     </span>
-                    <span>{quantities[product.id] || 1}</span>
+                    <span>{product.quantity}</span>
                     <span
                       className="bg-secondary-text text-primary font-bold text-lg w-4 h-4 flex justify-center items-center rounded cursor-pointer"
-                      onClick={() => addItem(product.id)}
+                      onClick={() => addItem(product.id, product.cartId)}
                     >
                       +
                     </span>
@@ -277,7 +330,8 @@ const Cart = () => {
               <p className="capitalize font-bold text-xl">order summary</p>
               <div className="flex justify-between items-center mt-4">
                 <p className="capitalize ">
-                  items ( <span className="font-bold">{cartProducts.length}</span> )
+                  items ({" "}
+                  <span className="font-bold">{cartProducts.length}</span> )
                 </p>
                 <p className="text-primary">${subtotal.toFixed(2)}</p>
               </div>
@@ -311,51 +365,63 @@ const Cart = () => {
       ) : (
         <div className="flex justify-center items-center h-56">
           <p className="text-2xl md:text-5xl text-primary-text">
-            No Orders Yet
+            No items in cart yet
           </p>
         </div>
       )}
 
-      {review && (
+      {showRating && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-primary-text">
-              </h2>
+              <h2 className="text-2xl font-bold text-primary-text"></h2>
               <button
                 type="button"
+                onClick={skipRating}
                 className="text-gray-600 hover:text-gray-800 cursor-pointer"
               >
                 ✕
               </button>
             </div>
-            <img
-              className="w-full h-64 object-cover rounded-lg"
-            />
-            <div className=" mt-2 flex justify-between items-center">
-              <p className="text-red-600">{}</p>
-              <p
-                className="flex items-center justify-between gap-2 bg-primary
-                                           py-0.5 px-2 rounded-md text-white"
-              >
-                <span
-                  
-                >
-                </span>
-              </p>
+            <div className="mb-4">
+              <p className="text-gray-700 font-semibold mb-2">Rating</p>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span
+                    key={star}
+                    className={`cursor-pointer text-2xl ${
+                      rating >= star ? "text-yellow-400" : "text-gray-400"
+                    }`}
+                    onClick={() => setRating(star)}
+                  >
+                    ★
+                  </span>
+                ))}
+              </div>
             </div>
-            <p className="text-gray-600 mt-2 font-semibold">
-              Category:{" "}
-              <span className="capitalize"></span>
-            </p>
-            <p className="text-gray-600 test-sm mt-2">
-            </p>
+            <div className="mb-4">
+              <label className="block text-gray-700 font-semibold mb-2">
+                Comments (optional)
+              </label>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="w-full p-2 border rounded"
+                placeholder="How was your shopping experience?"
+                rows="3"
+              />
+            </div>
             <button
               className="mt-4 w-full bg-primary text-white py-2 rounded-lg cursor-pointer"
-              type="button"
-              
+              onClick={handleRating}
             >
-              Add to Cart
+              Submit Rating
+            </button>
+            <button
+              className="mt-2 w-full bg-gray-300 text-gray-800 py-2 rounded-lg cursor-pointer"
+              onClick={skipRating}
+            >
+              Skip
             </button>
           </div>
         </div>

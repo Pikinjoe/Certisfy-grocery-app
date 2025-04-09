@@ -1,44 +1,53 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import { getProducts, getCarts, api } from "../services/api";
 import { assets } from "../Data/assets";
-import products from "../Data/products";
 import { MdOutlineFavoriteBorder, MdFavorite } from "react-icons/md";
 import { FaStar } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 const Categories = () => {
   const navRef = useRef(null);
-  const navigate = useNavigate();
-  const location = useLocation()
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState({});
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [cartItems, setCartItems] = useState({});
 
-  const searchParams = new URLSearchParams(location.search)
-  const searchQuery = searchParams.get('search') || ''
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await getProducts();
+        setProducts(res.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error loading products:", err);
+        toast.error("Failed to load products");
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  const categories = useMemo(() => {
+    const uniqueCategories = [
+      ...new Set(products.map((p) => p.category.toLowerCase())),
+    ];
+    return ["all", ...uniqueCategories];
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
-    let filtered = products
-
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(
-        (product) =>
-          product.category.toLowerCase() === selectedCategory.toLowerCase()
-      )
-    }
-
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (product) =>
-          product.name.toLowerCase().includes(searchQuery) || selectedCategory.toLowerCase().includes(searchQuery)
-      )
-    }
-    return filtered
-  }, [selectedCategory, searchQuery])
+    if (selectedCategory === "all") return products;
+    return products.filter(
+      (product) =>
+        product.category.toLowerCase() === selectedCategory.toLowerCase()
+    );
+  }, [products, selectedCategory]);
 
   const categoryClick = (category) => {
     setSelectedCategory(category);
@@ -49,14 +58,8 @@ const Categories = () => {
 
     const fetchFavorites = async () => {
       try {
-        const res = await fetch(
-          `http://localhost:8000/favorites?userId=${user.id}`,
-          {
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-        if (!res.ok) throw new Error("Failed to fetch favorites");
-        const data = await res.json();
+        const res = await api.get(`/favorites?userId=${user.id}`);
+        const data = res.data;
         const favoriteMap = data.reduce((acc, favorite) => {
           acc[favorite.productId] = true;
           return acc;
@@ -69,14 +72,8 @@ const Categories = () => {
 
     const fetchCart = async () => {
       try {
-        const res = await fetch(
-          `http://localhost:8000/cart?userId=${user.id}`,
-          {
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-        if (!res.ok) throw new Error("Failed to fetch cart");
-        const data = await res.json();
+        const res = await getCarts(user.id);
+        const data = Array.isArray(res.data) ? res.data : [];
         const cartMap = data.reduce((acc, cartItem) => {
           acc[cartItem.productId] = true;
           return acc;
@@ -107,37 +104,21 @@ const Categories = () => {
     try {
       if (isFavorited) {
         // Find the favorite to delete
-        const findResponse = await fetch(
-          `http://localhost:8000/favorites?userId=${user.id}&productId=${productId}`
+        const findResponse = await api.get(
+          `/favorites?userId=${user.id}&productId=${productId}`
         );
-        const favoritesToDelete = await findResponse.json();
+        const favoritesToDelete = findResponse.data;
         if (favoritesToDelete.length === 0) {
           throw new Error("Favorite not found");
         }
         const favoriteId = favoritesToDelete[0].id;
 
         // DELETE request
-        const response = await fetch(
-          `http://localhost:8000/favorites/${favoriteId}`,
-          {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (!response.ok) throw new Error("Failed to remove favorite");
+        await api.delete(`/favorites/${favoriteId}`);
         toast.success("Removed from favorites");
       } else {
         // POST request
-        const response = await fetch("http://localhost:8000/favorites", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ userId: user.id, productId }),
-        });
-        if (!response.ok) throw new Error("Failed to add favorite");
+        await api.post("/favorites", { userId: user.id, productId });
         toast.success("Added to favorites");
       }
     } catch (error) {
@@ -156,39 +137,27 @@ const Categories = () => {
       return;
     }
 
-    if (cartItems[productId]) {
-      toast.info("Already in cart");
-      return;
-    }
-
     try {
-      const checkResponse = await fetch(
-        `http://localhost:8000/cart?userId=${user.id}&productId=${productId}`,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
+      const checkResponse = await api.get(
+        `/carts?userId=${user.id}&productId=${productId}`
       );
-      const existingItems = await checkResponse.json();
+      const existingItems = checkResponse.data;
 
       if (existingItems.length > 0) {
-        toast.info("Item already in cart");
+        // Item exists, increment quantity
+        const existingCart = existingItems[0];
+        await api.post("/carts", {
+          userId: user.id,
+          productId,
+          quantity: 1, // Add 1 more
+        });
         setCartItems((prev) => ({ ...prev, [productId]: true }));
-        return;
+        toast.success("Added another to cart");
+      } else {
+        await api.post("/carts", { userId: user.id, productId });
+        setCartItems((prev) => ({ ...prev, [productId]: true }));
+        toast.success("Added to cart");
       }
-
-      const response = await fetch("http://localhost:8000/cart", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: user.id, productId }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to add to cart");
-      }
-      const newCartItem = await response.json();
-      setCartItems((prev) => ({ ...prev, [productId]: true }));
-      toast.success("Added to cart");
     } catch (error) {
       console.error("Error adding to cart", error);
       toast.error("Failed to add to cart");
@@ -205,6 +174,7 @@ const Categories = () => {
 
   useEffect(() => {
     const nav = navRef.current;
+    if (!nav) return;
     let isDown = false;
     let startX;
     let scrollLeft;
@@ -245,99 +215,37 @@ const Categories = () => {
       nav.removeEventListener("touchend", handleEnd);
       nav.removeEventListener("touchmove", handleMove);
     };
-  }, []);
+  }, [loading]);
 
-  useEffect(() => {
-    if (user) {
-      fetch(`http://localhost:8000/favorites?userId=${user.id}`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to fetch favorites");
-          return res.json();
-        })
-        .then((data) => {
-          const favoriteMap = (data || []).reduce((acc, favorite) => {
-            acc[favorite.productId] = true;
-            return acc;
-          }, {});
-          setFavorites(favoriteMap);
-        })
-        .catch((error) => console.error("Error fetching favorites:", error));
-    }
-  }, [user]);
+  if (loading) {
+    return (
+      <div className="bg-green-50 min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <div className="bg-green-50 min-h-screen">
       <h2 className="text-center font-bold text-xl py-2 text-primary-text md:text-2xl capitalize">
-        {searchQuery ? `Search results for '${searchQuery}'` : 
-        selectedCategory === "all" ? "products" : selectedCategory}
+        {selectedCategory === "all" ? "products" : selectedCategory}
       </h2>
 
       <div
         ref={navRef}
         className="overflow-x-auto whitespace-nowrap pb-2 scrollbar-hide"
       >
-        <button
-          onClick={() => categoryClick("all")}
-          className={`px-4 py-2 rounded bg-green-200 mx-2 font-semibold ${
-            selectedCategory === "all" ? "bg-primary text-white" : ""
-          }`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => categoryClick("beverages")}
-          className={`px-4 py-2 rounded bg-green-200 mx-2 font-semibold ${
-            selectedCategory === "beverages" ? "bg-primary text-white" : ""
-          }`}
-        >
-          Beverages
-        </button>
-        <button
-          onClick={() => categoryClick("confectioneries")}
-          className={`px-4 py-2 rounded bg-green-200 mx-2 font-semibold ${
-            selectedCategory === "confectioneries"
-              ? "bg-primary text-white"
-              : ""
-          }`}
-        >
-          Confectioneries
-        </button>
-        <button
-          onClick={() => categoryClick("jams")}
-          className={`px-4 py-2 rounded bg-green-200 mx-2 font-semibold ${
-            selectedCategory === "jams" ? "bg-primary text-white" : ""
-          }`}
-        >
-          Jams
-        </button>
-        <button
-          onClick={() => categoryClick("fruits")}
-          className={`px-4 py-2 rounded bg-green-200 mx-2 font-semibold ${
-            selectedCategory === "fruits" ? "bg-primary text-white" : ""
-          }`}
-        >
-          Fruits
-        </button>
-        <button
-          onClick={() => categoryClick("nuts")}
-          className={`px-4 py-2 rounded bg-green-200 mx-2 font-semibold ${
-            selectedCategory === "nuts" ? "bg-primary text-white" : ""
-          }`}
-        >
-          Nuts
-        </button>
-        <button
-          onClick={() => categoryClick("vegetables")}
-          className={`px-4 py-2 rounded bg-green-200 mx-2 font-semibold ${
-            selectedCategory === "vegetables" ? "bg-primary text-white" : ""
-          }`}
-        >
-          Vegetables
-        </button>
+        {categories.map((category) => (
+          <button
+            key={category}
+            onClick={() => categoryClick(category)}
+            className={`px-4 py-2 rounded bg-green-200 mx-2 font-semibold cursor-pointer capitalize ${
+              selectedCategory === category ? "bg-primary text-white" : ""
+            }`}
+          >
+            {category}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
@@ -349,7 +257,7 @@ const Categories = () => {
                   src={assets[product.image]}
                   alt={product.name}
                   className="h-full
-                 w-full object-cover"
+                 w-full object-cover cursor-pointer"
                   onClick={() => openProductDetails(product)}
                 />
                 <button
@@ -390,7 +298,9 @@ const Categories = () => {
             </div>
           ))
         ) : (
-          <p className="text-center col-span-full">No items found {searchQuery ? `for '${searchQuery}'` : 'in this category'} </p>
+          <p className="text-center col-span-full">
+            No items found in this category
+          </p>
         )}
       </div>
 
