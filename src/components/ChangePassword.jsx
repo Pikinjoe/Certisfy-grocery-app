@@ -8,14 +8,34 @@ const ChangePassword = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleUpdatePassword = () => {
-    if (newPassword && newPassword === confirmPassword) {
-      updateUser({ ...user, password: newPassword });
+  const handleUpdatePassword = async () => {
+    if (!newPassword.trim() || !confirmPassword.trim()) {
+      toast.info("Passwords cannot be empty");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.info("Passwords must match");
+      return;
+    }
+    if (newPassword === user.password) {
+      toast.info("New password must be different from current password");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.info("Password must be at least 6 characters long");
+      return;
+    }
+
+    try {
+      const updatedUser = { ...user, password: newPassword };
+      await updateUser(updatedUser); // Calls backend via AuthContext
       setNewPassword("");
       setConfirmPassword("");
       setIsEditing(false);
-    } else {
-      toast.info("Passwords must match and cannot be empty.");
+      toast.success("Password updated successfully");
+    } catch (error) {
+      console.error("Error updating password:", error);
+      toast.error("Failed to update password");
     }
   };
 

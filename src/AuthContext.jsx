@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { getUserById, updateUser } from './services/api'
+import { getUserById, updateUser as updateUserApi } from './services/api'
 
 const AuthContext = createContext();
 
@@ -32,13 +32,21 @@ export const AuthProvider = ({ children }) => {
 
   const updateUser = async (updatedUser) => {
     try {
-      const serverUser = await updateUser(user.id, updatedUser);
-      setUser(serverUser.data);
-      localStorage.setItem("user", JSON.stringify(serverUser.data));
+      if (!user?.id) {
+        throw new Error("No user ID available for update");
+      }
+      const res = await updateUserApi(user.id, updatedUser);
+      setUser(res.data);
+      localStorage.setItem("user", JSON.stringify(res.data));
       toast.success("Profile updated successfully!");
     } catch (error) {
       toast.error("Failed to update profile");
-      console.error("Error updating user:", error);
+      console.error("Error updating user:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        request: error.request,
+      });
     }
   };
 

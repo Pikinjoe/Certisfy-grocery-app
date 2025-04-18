@@ -21,6 +21,7 @@ import UpdateName from "../components/UpdateName";
 import UpdatePhoto from "../components/UpdatePhoto";
 import ChangePassword from "../components/ChangePassword";
 import ChangeEmail from "../components/ChangeEmail";
+import Review from "./Review";
 
 const Profile = ({ setLogoutHandle }) => {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ const Profile = ({ setLogoutHandle }) => {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/user/${user.id}`, {
+      const response = await fetch(`http://localhost:8000/users/${user.id}`, {
         method: 'DELETE',
       })
       if (!response.ok) {
@@ -88,7 +89,8 @@ const Profile = ({ setLogoutHandle }) => {
     {
       icon: MdReviews,
       text: "review",
-      action: () => navigate('/review'),
+      component: Review,
+      id: "review",
     },
     {
       icon: FaBriefcase,
@@ -115,6 +117,9 @@ const Profile = ({ setLogoutHandle }) => {
     }
   };
 
+  const backendBaseUrl = "http://localhost:8000"; 
+  const imageUrl = user.photoUrl ? `${backendBaseUrl}${user.photoUrl}` : null;
+
   return (
     <div className="bg-green-50 h-screen">
       <div className="bg-primary h-1/5  text-white pt-2">
@@ -125,10 +130,11 @@ const Profile = ({ setLogoutHandle }) => {
         <div className="text-center flex justify-center items-center flex-col h-full pb-2">
           {user.photoUrl ? (
           <img
-            src={user.photoUrl}
+            src={imageUrl}
             className="h-16 w-16 bg-primary-text rounded-full object-cover"
             alt={initials}
             onError={(e) => {
+              console.error("Image load error:", e);
               e.target.style.display = 'none';
               e.target.nextSibling.style.display = 'block'
             }}

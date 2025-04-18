@@ -7,9 +7,23 @@ export const api = axios.create({
 
 export const getUsers = () => api.get('/users')
 export const getUserById = (id) => api.get(`/users/${id}`)
-export const updateUser = (id, userData) => api.put(`/users/${id}`, userData)
+//export const updateUser = (id, userData) => api.put(`/users/${id}`, userData)
+
+export const updateUser = async (id, userData) => {
+    try {
+      const response = await api.put(`/users/${id}`, userData);
+      return response;
+    } catch (error) {
+      console.error("API error:", error.response?.data || error.message);
+      throw error;
+    }
+  };
 export const createUser = (userData) => api.post('/users', userData);
 export const loginUser = (credentials) => api.post('/users/login', credentials);
+export const uploadUserPhoto = (id, formData) =>
+    api.post(`/users/${id}/upload-photo`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
 export const getProducts = () => api.get('/products')
 export const getProductsById = (id) => api.get(`/products/${id}`)

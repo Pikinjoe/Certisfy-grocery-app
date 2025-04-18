@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../AuthContext";
+import { toast } from "react-toastify";
+import { uploadUserPhoto } from "../services/api";
 
 const UpdatePhoto = () => {
   const { user, updateUser } = useAuth();
@@ -7,29 +9,29 @@ const UpdatePhoto = () => {
   const [newPhoto, setNewPhoto] = useState(null);
 
   const handleUpdatePhoto = async () => {
-    if (newPhoto) {
-      try {
-        // Create a FormData object to send the file
-        const formData = new FormData();
-        formData.append("photo", newPhoto);
+    if (!newPhoto) {
+      toast.error("Please select a photo to upload.");
+      return;
+    }
+    try {
+      // Create a FormData object to send the file
+      const formData = new FormData();
+      formData.append("photo", newPhoto);
+      console.log("Uploading photo for user:", user.id);
 
-        // Send the file to the server
-        const response = await fetch(`http://localhost:8000/user/${user.id}/upload-photo`, {
-          method: "POST", // or PUT, depending on your API
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to upload photo");
-        }
-
-        const updatedUser = await response.json(); // Expect the server to return the updated user with a new photoUrl
-        updateUser(updatedUser); // Update the user with the server response
-        setNewPhoto(null);
-        setIsEditing(false);
-      } catch (error) {
-        console.error("Error uploading photo:", error);
-      }
+      // Send the file to the server
+      const response = await uploadUserPhoto(user.id, formData);
+      updateUser(response.data);
+      setNewPhoto(null);
+      setIsEditing(false);
+      toast.success("Profile photo updated successfully!");
+    } catch (error) {
+      console.error("Error uploading photo:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      toast.error("Failed to update profile photo. Please try again.");
     }
   };
 

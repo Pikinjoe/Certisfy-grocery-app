@@ -1,16 +1,32 @@
 import { useState } from "react";
 import { useAuth } from "../AuthContext";
+import { toast } from "react-toastify";
 
 const UpdateName = () => {
   const { user, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState(user?.fullName || "");
 
-  const handleUpdateName = () => {
-    if (newName.trim() && newName !== user.fullName) {
-      updateUser({ ...user, fullName: newName });
-      setIsEditing(false);
+  const handleUpdateName = async () => {
+    if (!newName.trim()) {
+      toast.error("Please enter a valid name.");
+      return
     }
+    if (newName === user.fullName) {
+      toast.info("No changes made to the name.");
+      return;
+    }
+
+    try {
+      const updatedUser = { ...user, fullName: newName };
+      await updateUser(updatedUser);
+      setIsEditing(false)
+      toast.success("Name updated successfully!");
+    }
+    catch (error) {
+      console.error("Error updating name:", error.response?.data || error.message);
+      toast.error("Failed to update name.");
+    }  
   };
 
   return (

@@ -43,6 +43,10 @@ const History = () => {
     fetchOrders();
   }, [user]);
 
+  if (loading) {
+    return <div className="bg-green-50 min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+  
   return (
     <div className="bg-green-50 min-h-screen">
       <h2 className="text-center font-bold text-xl py-4 text-primary-text md:text-2xl">

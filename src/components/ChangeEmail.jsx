@@ -7,18 +7,29 @@ const ChangeEmail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [newEmail, setNewEmail] = useState(user?.email || "");
 
-  const handleUpdateEmail = () => {
+  const handleUpdateEmail = async () => {
     if (
-      newEmail.trim() &&
-      newEmail !== user.email &&
-      /\S+@\S+\.\S+/.test(newEmail)
+      !newEmail.trim() || !/\S+@\S+\.\S+/.test(newEmail)
     ) {
-      updateUser({ ...user, email: newEmail });
-      setIsEditing(false);
-    } else {
-      toast.info("Please enter a valid email address.");
-    }
+      toast.info("Please enter a valid email address.")
+      return
   };
+    if (newEmail === user.email) {
+      toast.info("Email address is the same as the current one.")
+      return
+    }
+
+    try {
+      const updatedUser = { ...user, email: newEmail };
+      await updateUser(updatedUser);
+      setIsEditing(false);
+      toast.success("Email address updated successfully!");
+    } catch (error) {
+      console.error("Error updating email:", error);
+      toast.error("Failed to update email address. Please try again.");
+    }
+  }
+
 
   return (
     <div className="mt-6 p-4 bg-white rounded-lg shadow-md">
