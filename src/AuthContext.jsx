@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { getUserById, updateUser as updateUserApi } from './services/api'
+import { getUserById, updateUser as updateUserApi, deleteUser as deleteUserApi } from './services/api'
 
 const AuthContext = createContext();
 
@@ -30,6 +30,20 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("user");
   };
 
+  const deleteAccount = async () => {
+    try {
+      if (!user?.id) {
+        throw new Error("No user ID found");
+      }
+      await deleteUserApi(user.id);
+      logout(); // Clear local user
+      toast.success("Account deleted successfully!");
+    } catch (error) {
+      toast.error("Failed to delete account");
+      console.error("Error deleting account:", error);
+    }
+  };
+
   const updateUser = async (updatedUser) => {
     try {
       if (!user?.id) {
@@ -51,7 +65,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, updateUser }}>
+    <AuthContext.Provider value={{ user, login, logout, deleteAccount, loading, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

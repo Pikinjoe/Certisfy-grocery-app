@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaChevronLeft } from "react-icons/fa";
-import { getReviews } from "../services/api";
+import { getReviews, getUsers } from "../services/api";
 import { toast } from "react-toastify";
 
 const Review = () => {
@@ -12,16 +12,30 @@ const Review = () => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        const res = await getReviews();
-        const data = Array.isArray(res.data) ? res.data : [];
-        setReviews(data);
-        setLoading(false);
+        const [reviewsRes, usersRes] = await Promise.all([getReviews(), getUsers()]);
+  
+        const reviewsData = Array.isArray(reviewsRes.data) ? reviewsRes.data : [];
+        const usersData = Array.isArray(usersRes.data) ? usersRes.data : [];
+    
+        const mergedReviews = reviewsData.map((review) => {
+          const matchedUser = usersData.find(
+            (u) => String(u.id) === String(review.userId)
+          );
+          return {
+            ...review,
+            user: matchedUser || {},
+          };
+        });
+    
+        setReviews(mergedReviews);
       } catch (error) {
-        console.error("Error fetching reviews:", error);
+        console.error("Error fetching reviews or users:", error);
         toast.error("Failed to load reviews");
+      } finally {
         setLoading(false);
       }
     };
+  
     fetchReviews();
   }, []);
 
@@ -57,7 +71,7 @@ const Review = () => {
             >
                 {review.user?.photoUrl ? (
                 <img
-                  src={review.user.photoUrl}
+                  src={`http://localhost:8000${review.user.photoUrl}`}
                   alt={review.user.fullName || "User"}
                   className="h-16 w-16 rounded-full object-cover"
                   onError={(e) => {

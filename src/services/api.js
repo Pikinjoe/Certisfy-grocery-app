@@ -19,6 +19,7 @@ export const updateUser = async (id, userData) => {
     }
   };
 export const createUser = (userData) => api.post('/users', userData);
+export const deleteUser = (id) => api.delete(`/users/${id}`);
 export const loginUser = (credentials) => api.post('/users/login', credentials);
 export const uploadUserPhoto = (id, formData) =>
     api.post(`/users/${id}/upload-photo`, formData, {

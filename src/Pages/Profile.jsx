@@ -25,7 +25,7 @@ import Review from "./Review";
 
 const Profile = ({ setLogoutHandle }) => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, deleteAccount } = useAuth();
   const [activeComponent, setActiveComponent] = useState(null);
 
   if (!user) {
@@ -41,25 +41,18 @@ const Profile = ({ setLogoutHandle }) => {
   };
   const initials = getInitials(user.fullName);
 
-  const deleteAccount = async () => {
-    const confirmed = window.confirm('Are you sure that you want to delete your account and all associated data? This action can not be undone.')
-    if (!confirmed) return;
-
-    try {
-      const response = await fetch(`http://localhost:8000/users/${user.id}`, {
-        method: 'DELETE',
+  const handleDelete = () => {
+    if (window.confirm('Are you sure that you want to delete your account and all associated data? This action can not be undone.')) {
+      deleteAccount()
+      .then(() => {
+        toast.success("Account deleted successfully!");
       })
-      if (!response.ok) {
-        throw new Error("Failed to delete account");
-      }
-      logout()
-      toast.success('Account deleted successfully')
-      navigate('/')
-    } catch (error){
-      console.error('Error deleting account:', error)
-      toast.error('Failed to delete account')
-    }
+      .catch((error) => {
+        toast.error("Failed to delete account");
+        console.error("Error deleting account:", error);
+      });
   }
+  };
 
   const menuItems = [
     {
@@ -100,7 +93,7 @@ const Profile = ({ setLogoutHandle }) => {
     {
       icon: FaUserTimes,
       text: "delete my account and data",
-      action: deleteAccount,
+      action: handleDelete,
     },
     {
       icon: IoLogOut,

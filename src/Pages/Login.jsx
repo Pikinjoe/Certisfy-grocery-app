@@ -45,7 +45,7 @@ const Login = () => {
           navigate("/dashboard");
         }, 1500);
     } catch (error) {
-      toast.error(error.message || "Login failed");
+      toast.error("Login failed, enter valid credentials");
     } finally {
       setLoading(false);
     }
